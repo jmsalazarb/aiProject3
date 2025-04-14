@@ -167,6 +167,14 @@ class DigitClassificationModel(Module):
         input_size = 28 * 28
         output_size = 10
         "*** YOUR CODE HERE ***"
+        # Hyperparameters
+        self.alpha = 0.001
+        self.batch_size = 64
+        hidden_size = 200
+
+        # Layers
+        self.layer1 = Linear(input_size, hidden_size)
+        self.layer2 = Linear(hidden_size, output_size)
 
 
 
@@ -186,6 +194,7 @@ class DigitClassificationModel(Module):
                 (also called logits)
         """
         """ YOUR CODE HERE """
+        return self.layer2(torch.relu(self.layer1(x)))
 
  
 
@@ -203,6 +212,7 @@ class DigitClassificationModel(Module):
         Returns: a loss tensor
         """
         """ YOUR CODE HERE """
+        return cross_entropy(self.run(x), y)
 
     
         
@@ -212,6 +222,23 @@ class DigitClassificationModel(Module):
         Trains the model.
         """
         """ YOUR CODE HERE """
+        data = DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
+        optimizer = optim.Adam(self.parameters(), lr=self.alpha)
+        testAccuracy = 0
+        while testAccuracy < 0.98:
+            for batch in data:
+                # Training code goes here
+                # batch is a sample
+                x = batch['x']
+                y = batch['label']
+                loss = self.get_loss(x, y)
+
+                # update weights
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+            testAccuracy = dataset.get_validation_accuracy()
+
 
 
 
