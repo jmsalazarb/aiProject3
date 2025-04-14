@@ -343,8 +343,15 @@ def Convolve(input: tensor, weight: tensor):
     """
     input_tensor_dimensions = input.shape
     weight_dimensions = weight.shape
-    Output_Tensor = tensor(())
     "*** YOUR CODE HERE ***"
+    output_width = input_tensor_dimensions[1] - weight_dimensions[1] + 1
+    output_height = input_tensor_dimensions[0] - weight_dimensions[0] + 1
+    Output_Tensor = torch.zeros((output_height, output_width))
+
+    for row in range(output_height):
+        for col in range(output_width):
+            subtensor = input[row:row+weight_dimensions[0], col:col+weight_dimensions[1]]
+            Output_Tensor[row, col] = (subtensor * weight).sum()
 
     
     "*** End Code ***"
@@ -372,6 +379,15 @@ class DigitConvolutionalModel(Module):
 
         self.convolution_weights = Parameter(ones((3, 3)))
         """ YOUR CODE HERE """
+        # Hyperparameters
+        self.alpha = 0.001
+        self.batch_size = 64
+        hidden_size = 200
+
+        # Layers
+        input_size = 26*26
+        self.layer1 = Linear(input_size, hidden_size)
+        self.layer2 = Linear(hidden_size, output_size)
 
 
 
@@ -388,6 +404,7 @@ class DigitConvolutionalModel(Module):
         x = stack(list(map(lambda sample: Convolve(sample, self.convolution_weights), x)))
         x = x.flatten(start_dim=1)
         """ YOUR CODE HERE """
+        return self.layer2(torch.relu(self.layer1(x)))
 
 
     def get_loss(self, x, y):
@@ -404,6 +421,7 @@ class DigitConvolutionalModel(Module):
         Returns: a loss tensor
         """
         """ YOUR CODE HERE """
+        return cross_entropy(self.forward(x), y)
 
      
         
@@ -413,6 +431,22 @@ class DigitConvolutionalModel(Module):
         Trains the model.
         """
         """ YOUR CODE HERE """
+        data = DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
+        optimizer = optim.Adam(self.parameters(), lr=self.alpha)
+        testAccuracy = 0
+        while testAccuracy < 0.82:
+            for batch in data:
+                # Training code goes here
+                # batch is a sample
+                x = batch['x']
+                y = batch['label']
+                loss = self.get_loss(x, y)
+
+                # update weights
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+            testAccuracy = dataset.get_validation_accuracy()
 
 
 
