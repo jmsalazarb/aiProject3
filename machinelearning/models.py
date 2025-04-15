@@ -94,7 +94,11 @@ class RegressionModel(Module):
         # Initialize your model parameters here
         "*** YOUR CODE HERE ***"
         super().__init__()
-
+        self.layers = torch.nn.ModuleList([
+            Linear(1, 128),
+            Linear(128, 128),
+            Linear(128, 1)
+        ])
 
 
     def forward(self, x):
@@ -107,7 +111,10 @@ class RegressionModel(Module):
             A node with shape (batch_size x 1) containing predicted y-values
         """
         "*** YOUR CODE HERE ***"
-
+        for layer in self.layers[:-1]:
+            x = relu(layer(x))
+        x = self.layers[-1](x)
+        return x
     
     def get_loss(self, x, y):
         """
@@ -120,7 +127,7 @@ class RegressionModel(Module):
         Returns: a tensor of size 1 containing the loss
         """
         "*** YOUR CODE HERE ***"
- 
+        return mse_loss(self.forward(x), y)
         
 
     def train(self, dataset):
@@ -138,7 +145,18 @@ class RegressionModel(Module):
             
         """
         "*** YOUR CODE HERE ***"
+        dataloader = DataLoader(dataset, batch_size = 64, shuffle = True)
+        optimizer = optim.Adam(self.parameters(), lr = 0.005)
+        num_epochs = 100
 
+        for epoch in range(num_epochs):
+            for sample in dataloader:
+                x = sample['x']
+                y = sample['label']
+                optimizer.zero_grad()
+                loss = self.get_loss(x, y)
+                loss.backward()
+                optimizer.step()
             
 
 
