@@ -38,6 +38,7 @@ class PerceptronModel(Module):
         super(PerceptronModel, self).__init__()
         
         "*** YOUR CODE HERE ***"
+        self.w = torch.nn.Parameter(torch.ones(1, dimensions))
         
 
     def get_weights(self):
@@ -57,6 +58,11 @@ class PerceptronModel(Module):
         The pytorch function `tensordot` may be helpful here.
         """
         "*** YOUR CODE HERE ***"
+        # compute the dot product of the stored weight vector and the given input
+        # returns a Tensor object
+        weight_vector = self.get_weights()
+        result = torch.tensordot(weight_vector, x, dims=([1], [1])).squeeze()
+        return result
         
 
     def get_prediction(self, x):
@@ -66,6 +72,11 @@ class PerceptronModel(Module):
         Returns: 1 or -1
         """
         "*** YOUR CODE HERE ***"
+        dot_product_result = self.run(x).item()
+        if dot_product_result >=0:
+            return 1
+        else:
+            return -1
 
 
 
@@ -81,6 +92,20 @@ class PerceptronModel(Module):
         with no_grad():
             dataloader = DataLoader(dataset, batch_size=1, shuffle=True)
             "*** YOUR CODE HERE ***"
+
+            correct_predictions = False
+            while correct_predictions == False:
+                correct_predictions = True
+                for batch in dataloader:
+                    x = batch['x']
+                    y = batch['label'].item()
+
+                    y_hat = self.get_prediction(x)
+                    if y_hat != y:
+                        # update the weight vector
+                        self.w.data += y * x
+                        correct_predictions = False
+
 
 
 
