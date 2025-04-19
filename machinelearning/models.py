@@ -1,6 +1,7 @@
 from torch import no_grad, stack
 from torch.utils.data import DataLoader
 from torch.nn import Module
+import numpy as np
 
 
 """
@@ -302,6 +303,11 @@ class LanguageIDModel(Module):
         self.languages = ["English", "Spanish", "Finnish", "Dutch", "Polish"]
         super(LanguageIDModel, self).__init__()
         "*** YOUR CODE HERE ***"
+        self.hidden_size = 128
+        self.Wx = Linear(self.num_chars, self.hidden_size)
+        self.Wh = Linear(self.hidden_size, self.hidden_size) 
+        self.output_layer = Linear(self.hidden_size, len(self.languages))
+        
 
 
     def run(self, xs):
@@ -335,6 +341,15 @@ class LanguageIDModel(Module):
         """
         "*** YOUR CODE HERE ***"
 
+        for i, x_t in enumerate(xs):
+            if i == 0:
+                h = relu(self.Wx(x_t)) # h1 = f_initial(x0)
+            else:
+                h = relu(self.Wx(x_t) + self.Wh(h)) #h2 = f(next x, prev h)
+
+        return self.output_layer(h)
+                
+
     
     def get_loss(self, xs, y):
         """
@@ -351,6 +366,13 @@ class LanguageIDModel(Module):
         Returns: a loss node
         """
         "*** YOUR CODE HERE ***"
+        #cross_entropy(prediction, target):
+        #  This function should be your loss function for any 
+        # classification tasks(Questions 3-5). 
+        # The further away your prediction is from the target, 
+        # the higher a value this will return.
+        
+        return cross_entropy(self.run(xs),y)
         
 
     def train(self, dataset):
@@ -368,6 +390,24 @@ class LanguageIDModel(Module):
         For more information, look at the pytorch documentation of torch.movedim()
         """
         "*** YOUR CODE HERE ***"
+        
+        data = DataLoader(dataset, batch_size=64, shuffle=True)
+        optimizer = optim.Adam(self.parameters(), lr=0.005)
+
+        accuracy = 0
+        epoch = 0
+
+        while accuracy<0.85 and epoch<20:
+            for batch in data:
+                xs = movedim(batch['x'], 1, 0)  
+                y = batch['label']
+                loss = self.get_loss(xs, y)
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+
+            accuracy = dataset.get_validation_accuracy()
+            epoch +=1
 
         
 
